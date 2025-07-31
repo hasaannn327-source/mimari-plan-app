@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "isim": "Köşe Dairesi 2+1",
+    "gorsel_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=60",
+    "cadde_cephe_sayisi": 2,
+    "daire_tipi": "2+1",
+    "min_alani": 400,
+    "max_alani": 600
+  },
+  {
+    "id": 2,
+    "isim": "İç Daire 2+1",
+    "gorsel_url": "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=800&q=60",
+    "cadde_cephe_sayisi": 1,
+    "daire_tipi": "2+1",
+    "min_alani": 300,
+    "max_alani": 500
+  },
+  {
+    "id": 3,
+    "isim": "Köşe Dairesi 3+1",
+    "gorsel_url": "https://images.unsplash.com/photo-1590650516494-0c8eedd2a1de?auto=format&fit=crop&w=800&q=60",
+    "cadde_cephe_sayisi": 2,
+    "daire_tipi": "3+1",
+    "min_alani": 500,
+    "max_alani": 800
+  },
+  {
+    "id": 4,
+    "isim": "Dört Cepheli Lüks 3+1",
+    "gorsel_url": "https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?auto=format&fit=crop&w=800&q=60",
+    "cadde_cephe_sayisi": 4,
+    "daire_tipi": "3+1",
+    "min_alani": 700,
+    "max_alani": 1000
+  }
+]
