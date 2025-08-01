@@ -24,6 +24,19 @@ plans = load_plans(Path(__file__).parent / "plans.json")
 # Configure OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY", "")
 
+# Sidebar API key input if env variable is absent
+if not openai.api_key:
+    st.sidebar.header("🔑 OpenAI API Ayarı")
+    openai.api_key = st.sidebar.text_input(
+        "OpenAI API Key*",
+        type="password",
+        placeholder="sk-...",
+        value=st.session_state.get("user_openai_key", ""),
+    )
+    if openai.api_key:
+        st.session_state["user_openai_key"] = openai.api_key
+        st.sidebar.success("Anahtar kaydedildi—oturum boyunca geçerli.")
+
 # Helper to generate prompt for DALL·E
 def build_floorplan_prompt(total_area: float, daire_tipi: str, cephe: int, daire_sayisi: int) -> str:
     """Return a detailed text prompt to feed DALL·E for floor-plan generation."""
