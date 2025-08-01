@@ -52,17 +52,36 @@ def build_floorplan_prompt(total_area: float, daire_tipi: str, cephe: int, daire
 # Cache DALL·E results to avoid repeated API calls for the same parameters
 @st.cache_data(show_spinner="Generating floor plan with DALL·E …")
 def generate_floorplan_image(prompt: str) -> str:
-    """Request DALL·E to create an image and return its URL."""
+    """Request DALL·E to create an image URL. Works with both openai<1 and >=1."""
     if not openai.api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
-    try:
-        response = openai.Image.create(model="dall-e-3", prompt=prompt, n=1, size="1024x1024")
-    except Exception:
-        # Fallback to DALL·E 2 for compatibility
-        response = openai.Image.create(model="dall-e-2", prompt=prompt, n=1, size="1024x1024")
+    # Detect major version of openai package
+    version_major = int(openai.__version__.split(".")[0]) if hasattr(openai, "__version__") else 0
 
-    return response["data"][0]["url"]
+    if version_major >= 1:
+        # New client-based interface (openai>=1.0.0)
+        try:
+            from openai import OpenAI  # type: ignore
+
+            client = OpenAI(api_key=openai.api_key)
+
+            try:
+                resp = client.images.generate(model="dall-e-3", prompt=prompt, n=1, size="1024x1024")
+            except Exception:
+                resp = client.images.generate(model="dall-e-2", prompt=prompt, n=1, size="1024x1024")
+
+            return resp.data[0].url  # type: ignore[attr-defined]
+        except Exception as exc:
+            raise RuntimeError(f"Yeni OpenAI istemci arayüzünde hata: {exc}")
+    else:
+        # Legacy interface (openai<1.0.0)
+        try:
+            response = openai.Image.create(model="dall-e-3", prompt=prompt, n=1, size="1024x1024")
+        except Exception:
+            response = openai.Image.create(model="dall-e-2", prompt=prompt, n=1, size="1024x1024")
+
+        return response["data"][0]["url"]
 
 st.set_page_config(page_title="Mimari Kat Planı Önerici", layout="centered")
 
