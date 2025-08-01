@@ -1,7 +1,9 @@
 import json
 import math
+import os
 import streamlit as st
 from pathlib import Path
+import openai
 
 # Ortalama daire alanları (m²)
 ORTALAMA_ALAN = {
@@ -18,6 +20,31 @@ def load_plans(json_path: Path):
         return json.load(f)
 
 plans = load_plans(Path(__file__).parent / "plans.json")
+
+# Configure OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY", "")
+
+# Helper to generate prompt for DALL·E
+def build_floorplan_prompt(total_area: float, daire_tipi: str, cephe: int, daire_sayisi: int) -> str:
+    """Return a detailed text prompt to feed DALL·E for floor-plan generation."""
+    return (
+        f"Top-down architectural floor plan, clean black-line blueprint on white background, "
+        f"total usable area about {total_area:.0f} m², contains {daire_sayisi} apartment units of type {daire_tipi}, "
+        f"building has {cephe} street-facing facade{'s' if cephe>1 else ''}, "
+        "each apartment includes living room, open kitchen, bedrooms, bathroom, corridor; central common core with stairs and elevator; "
+        f"label each apartment as '{daire_tipi}' and show room names with approximate area in m²; show doors with swing arcs and windows on exterior walls; "
+        "minimalist CAD style, no 3-D shading, vector-like clarity."
+    )
+
+# Cache DALL·E results to avoid repeated API calls for the same parameters
+@st.cache_data(show_spinner="Generating floor plan with DALL·E …")
+def generate_floorplan_image(prompt: str) -> str:
+    """Request DALL·E to create an image and return its URL."""
+    if not openai.api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set.")
+
+    response = openai.Image.create(prompt=prompt, n=1, size="1024x1024")
+    return response["data"][0]["url"]
 
 st.set_page_config(page_title="Mimari Kat Planı Önerici", layout="centered")
 
@@ -50,27 +77,15 @@ if submit:
     with col2:
         st.metric(label="Tahmini Daire Sayısı", value=str(daire_sayisi))
 
-    # Plan filtreleme
-    uygun_planlar = [
-        p for p in plans
-        if p["cadde_cephe_sayisi"] == cephe_sayisi
-        and p["daire_tipi"] == daire_tipi
-        and p["min_alani"] <= net_alan <= p["max_alani"]
-    ]
+    st.header("DALL·E Kat Planı")
 
-    # En yakın alan farkına göre sıralama
-    uygun_planlar.sort(key=lambda p: abs(((p["min_alani"] + p["max_alani"]) / 2) - net_alan))
+    try:
+        prompt = build_floorplan_prompt(net_alan, daire_tipi, cephe_sayisi, daire_sayisi)
+        image_url = generate_floorplan_image(prompt)
 
-    st.header("Önerilen Kat Planı")
-
-    if uygun_planlar:
-        secilen = uygun_planlar[0]
-        st.subheader(secilen["isim"])
-        st.image(secilen["gorsel_url"], use_column_width=True)
-        st.write(
-            f"Cadde Cephesi Sayısı: **{secilen['cadde_cephe_sayisi']}**  |  "
-            f"Daire Tipi: **{secilen['daire_tipi']}**  |  "
-            f"Uygun Alan Aralığı: **{secilen['min_alani']} - {secilen['max_alani']} m²**"
-        )
-    else:
-        st.warning("Maalesef kriterlerinize tam olarak uyan bir plan bulunamadı. Lütfen parametreleri değiştirin.")
+        st.subheader("Üretilen Kat Planı (DALL·E)")
+        st.image(image_url, use_column_width=True)
+        with st.expander("Kullanılan DALL·E İstemi (Prompt)"):
+            st.code(prompt)
+    except Exception as e:
+        st.error(f"Plan üretiminde hata oluştu: {e}")
