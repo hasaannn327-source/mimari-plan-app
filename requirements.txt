@@ -1,1 +1,5 @@
 streamlit
+cursor/generate-architectural-floor-plan-image-05fa
+matplotlib
+openai>=1.3.0
+

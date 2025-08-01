@@ -19,6 +19,70 @@ def load_plans(json_path: Path):
 
 plans = load_plans(Path(__file__).parent / "plans.json")
 
+cursor/generate-architectural-floor-plan-image-05fa
+# Configure OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY", "")
+
+# Sidebar API key input if env variable is absent
+if not openai.api_key:
+    st.sidebar.header("🔑 OpenAI API Ayarı")
+    openai.api_key = st.sidebar.text_input(
+        "OpenAI API Key*",
+        type="password",
+        placeholder="sk-...",
+        value=st.session_state.get("user_openai_key", ""),
+    )
+    if openai.api_key:
+        st.session_state["user_openai_key"] = openai.api_key
+        st.sidebar.success("Anahtar kaydedildi—oturum boyunca geçerli.")
+
+# Helper to generate prompt for DALL·E
+def build_floorplan_prompt(total_area: float, daire_tipi: str, cephe: int, daire_sayisi: int) -> str:
+    """Return a detailed text prompt to feed DALL·E for floor-plan generation."""
+    return (
+        f"Top-down 2D architectural floor plan, clean black-line blueprint on white background, "
+        f"total usable area about {total_area:.0f} m², contains {daire_sayisi} apartment units of type {daire_tipi}, "
+        f"building has {cephe} street-facing facade{'s' if cephe>1 else ''}, "
+        "each apartment includes living room, open kitchen, bedrooms, bathroom, corridor; central common core with stairs and elevator; "
+        f"label each apartment as '{daire_tipi}' and show room names with approximate area in m²; show doors with swing arcs and windows on exterior walls; "
+        "minimalist CAD style, no 3-D shading, vector-like clarity."
+    )
+
+# Cache DALL·E results to avoid repeated API calls for the same parameters
+@st.cache_data(show_spinner="Generating floor plan with DALL·E …")
+def generate_floorplan_image(prompt: str) -> str:
+    """Request DALL·E to create an image URL. Works with both openai<1 and >=1."""
+    if not openai.api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set.")
+
+    # Detect major version of openai package
+    version_major = int(openai.__version__.split(".")[0]) if hasattr(openai, "__version__") else 0
+
+    if version_major >= 1:
+        # New client-based interface (openai>=1.0.0)
+        try:
+            from openai import OpenAI  # type: ignore
+
+            client = OpenAI(api_key=openai.api_key)
+
+            try:
+                resp = client.images.generate(model="dall-e-3", prompt=prompt, n=1, size="1024x1024")
+            except Exception:
+                resp = client.images.generate(model="dall-e-2", prompt=prompt, n=1, size="1024x1024")
+
+            return resp.data[0].url  # type: ignore[attr-defined]
+        except Exception as exc:
+            raise RuntimeError(f"Yeni OpenAI istemci arayüzünde hata: {exc}")
+    else:
+        # Legacy interface (openai<1.0.0)
+        try:
+            response = openai.Image.create(model="dall-e-3", prompt=prompt, n=1, size="1024x1024")
+        except Exception:
+            response = openai.Image.create(model="dall-e-2", prompt=prompt, n=1, size="1024x1024")
+
+        return response["data"][0]["url"]
+
+
 st.set_page_config(page_title="Mimari Kat Planı Önerici", layout="centered")
 
 st.title("🏢 Mimari Kat Planı Önerici")
