@@ -15,8 +15,7 @@ st.set_page_config(page_title="Mimari Plan Çizici (Stability Ultra)", layout="c
 st.title("🏗️ Mimari Kat Planı Çizici (Stability Ultra API)")
 
 st.markdown("""
-Bu araç, verdiğiniz bilgilere göre **yapay zeka ile 2D mimari kat planı görseli** oluşturur.  
-Stability AI’nin v2beta ultra model endpoint’ini kullanır.
+Bu araç, verdiğiniz bilgilere göre **yapay zeka ile 2D mimari kat planı görseli** oluşa ultra model endpoint’ini kullanır.
 """)
 
 with st.form("input_form"):
@@ -41,7 +40,7 @@ def generate_image_ultra(prompt):
     url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
     headers = {
         "authorization": f"Bearer {STABILITY_API_KEY}",
-        "accept": "image/*"  # Burada image/* olarak değişti
+        "accept": "image/*"
     }
     files = {"none": ""}
     data = {
@@ -58,6 +57,6 @@ if submit:
     st.info("🧠 Görsel oluşturuluyor, lütfen bekleyin...")
     try:
         img_bytes = generate_image_ultra(prompt)
-        st.image(img_bytes, use_column_width=True, caption="Yapay Zeka ile Oluşturulan Kat Planı")
+        st.image(img_bytes, use_container_width=True, caption="Yapay Zeka ile Oluşturulan Kat Planı")
     except Exception as e:
         st.error(f"Görsel oluşturulamadı: {e}")
