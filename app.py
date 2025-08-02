@@ -3,7 +3,6 @@ import requests
 import base64
 import math
 
-# Stability API key (buraya kendi anahtarını koy)
 STABILITY_API_KEY = "sk-laNUBRTwk4ZkEbTU6lH8T9AGyubr06jOP770EgMOCmxAsF1x"
 
 ORTALAMA_ALAN = {
@@ -14,11 +13,11 @@ ORTALAMA_ALAN = {
 }
 
 st.set_page_config(page_title="Mimari Plan Çizici (Stability AI)", layout="centered")
-st.title("🏗️ Stability AI ile Kat Planı Çizici (multipart/form-data)")
+st.title("🏗️ Stability AI ile Kat Planı Çizici (SDXL, JSON POST)")
 
 st.markdown("""
 Bu uygulama, verdiğiniz bilgilere göre **2D mimari kat planı görseli** üretmek için  
-Stability API'ye multipart/form-data ile POST isteği gönderir.
+Stability API SDXL modelini **application/json** formatında çağırır.
 """)
 
 with st.form("input_form"):
@@ -41,22 +40,21 @@ def generate_image_stability(prompt):
     url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-v1-0/text-to-image"
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
+        "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    # multipart/form-data için 'files' parametresi kullanıyoruz
-    files = {
-        "prompt": (None, prompt),
-        # İstersen buraya diğer parametreleri de ekleyebilirsin, örneğin:
-        # "aspect_ratio": (None, "1:1"),
-        # "negative_prompt": (None, "blurry, low quality"),
-        # "seed": (None, "12345"),
-        # "output_format": (None, "png")
+    data = {
+        "text_prompts": [{"text": prompt, "weight": 1}],
+        "cfg_scale": 7,
+        "clip_guidance_preset": "FAST_BLUE",
+        "height": 1024,
+        "width": 1024,
+        "samples": 1,
+        "steps": 30,
     }
-
-    response = requests.post(url, headers=headers, files=files)
+    response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
         raise Exception(f"API hatası: {response.status_code} {response.text}")
-
     resp_json = response.json()
     img_base64 = resp_json["artifacts"][0]["base64"]
     img_bytes = base64.b64decode(img_base64)
@@ -69,4 +67,4 @@ if submit:
         img = generate_image_stability(prompt)
         st.image(img, caption="Yapay Zeka ile Oluşturulan Kat Planı", use_column_width=True)
     except Exception as e:
-        st.error(f"Görsel oluşturulamadı: {e}")        
+        st.error(f"Görsel oluşturulamadı: {e}")
