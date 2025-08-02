@@ -42,12 +42,10 @@ def build_prompt(toplam_alan, ortak_yuzde, daire_tipi, cephe_sayisi):
     )
 
 MODEL_ENDPOINTS = [
-    # Not: Bazı modeller aynı endpointi kullanıyor. "Stable Diffusion 3.5 Large Turbo", "Medium", "Flash" için aynı endpoint
     "https://api.stability.ai/v2beta/stable-image/generate/ultra",  # Stable Image Ultra
     "https://api.stability.ai/v2beta/stable-image/generate/core",   # Stable Image Core
-    "https://api.stability.ai/v2beta/stable-image/generate/sd3",    # Stable Diffusion 3.5 Large, Turbo, Medium, Flash
-    # SDXL 1.0 endpoint, dokümana göre:
-    "https://api.stability.ai/v1/generation/sdxl-1-0/text-to-image", 
+    "https://api.stability.ai/v2beta/stable-image/generate/sd3",    # Stable Diffusion 3.5 Large / Turbo / Medium / Flash
+    "https://api.stability.ai/v1/generation/stable-diffusion-xl-v1-0/text-to-image",  # SDXL 1.0 (güncel endpoint)
 ]
 
 def generate_image_with_model(prompt, model_url):
@@ -55,8 +53,7 @@ def generate_image_with_model(prompt, model_url):
         "Authorization": f"Bearer {STABILITY_API_KEY}",
         "Content-Type": "application/json",
     }
-    # SDXL endpoint JSON yapısı farklı olabilir, o yüzden kontrol edelim
-    if "sdxl" in model_url:
+    if "stable-diffusion-xl" in model_url:
         data = {
             "text_prompts": [{"text": prompt, "weight": 1}],
             "cfg_scale": 7,
