@@ -1,3 +1,5 @@
+import os
+import openai
 import json
 import math
 import streamlit as st
@@ -19,7 +21,6 @@ def load_plans(json_path: Path):
 
 plans = load_plans(Path(__file__).parent / "plans.json")
 
-cursor/generate-architectural-floor-plan-image-05fa
 # Configure OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY", "")
 
