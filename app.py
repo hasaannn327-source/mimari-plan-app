@@ -15,8 +15,14 @@ st.set_page_config(page_title="Mimari Plan Çizici (Stability AI)", layout="cent
 st.title("🏗️ Stability AI ile Kat Planı Çizici")
 
 st.markdown("""
-Bu uygulama, verdiğiniz bilgilere göre **Stable Diffusion** ile mimarî kat planı görselleri üretir.  
-Planlar 2D CAD tarzında, sade ve temiz çizim olur.
+Bu uygulama, verdiğiniz bilgilere göre aşağıdaki modelleri sırayla deneyerek **mimarî kat planı görselleri** üretir:  
+- Stable Image Ultra  
+- Stable Image Core  
+- Stable Diffusion 3.5 Large  
+- Stable Diffusion 3.5 Large Turbo  
+- Stable Diffusion 3.5 Medium  
+- Stable Diffusion 3.5 Flash  
+- SDXL 1.0
 """)
 
 with st.form("input_form"):
@@ -35,40 +41,57 @@ def build_prompt(toplam_alan, ortak_yuzde, daire_tipi, cephe_sayisi):
         f"{cephe_sayisi} street-facing side{'s' if cephe_sayisi > 1 else ''}"
     )
 
+MODEL_ENDPOINTS = [
+    # Not: Bazı modeller aynı endpointi kullanıyor. "Stable Diffusion 3.5 Large Turbo", "Medium", "Flash" için aynı endpoint
+    "https://api.stability.ai/v2beta/stable-image/generate/ultra",  # Stable Image Ultra
+    "https://api.stability.ai/v2beta/stable-image/generate/core",   # Stable Image Core
+    "https://api.stability.ai/v2beta/stable-image/generate/sd3",    # Stable Diffusion 3.5 Large, Turbo, Medium, Flash
+    # SDXL 1.0 endpoint, dokümana göre:
+    "https://api.stability.ai/v1/generation/sdxl-1-0/text-to-image", 
+]
+
 def generate_image_with_model(prompt, model_url):
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
         "Content-Type": "application/json",
     }
-    data = {
-        "cfg_scale": 7,
-        "clip_guidance_preset": "FAST_BLUE",
-        "height": 512,
-        "width": 512,
-        "samples": 1,
-        "steps": 30,
-        "text_prompts": [{"text": prompt, "weight": 1}],
-    }
+    # SDXL endpoint JSON yapısı farklı olabilir, o yüzden kontrol edelim
+    if "sdxl" in model_url:
+        data = {
+            "text_prompts": [{"text": prompt, "weight": 1}],
+            "cfg_scale": 7,
+            "clip_guidance_preset": "FAST_BLUE",
+            "height": 1024,
+            "width": 1024,
+            "samples": 1,
+            "steps": 30,
+        }
+    else:
+        data = {
+            "height": 512,
+            "width": 512,
+            "samples": 1,
+            "steps": 30,
+            "cfg_scale": 7,
+            "text_prompts": [{"text": prompt, "weight": 1}],
+        }
+
     response = requests.post(model_url, headers=headers, json=data)
     if response.status_code != 200:
-        raise Exception(f"API hatası ({model_url}): {response.text}")
+        raise Exception(f"API hatası ({model_url}): {response.status_code} {response.text}")
+
     result = response.json()
     img_base64 = result["artifacts"][0]["base64"]
     return base64.b64decode(img_base64)
 
 def generate_image(prompt):
-    # Öncelikli model
-    model_1 = "https://api.stability.ai/v1/generation/stable-diffusion-xl-beta-v2-2-2/text-to-image"
-    # Yedek model
-    model_2 = "https://api.stability.ai/v1/generation/stable-diffusion-512-v2-1/text-to-image"
-    try:
-        return generate_image_with_model(prompt, model_1)
-    except Exception as e1:
-        st.warning(f"Birinci model hatası: {e1}\nYedek modele geçiliyor...")
+    for model_url in MODEL_ENDPOINTS:
         try:
-            return generate_image_with_model(prompt, model_2)
-        except Exception as e2:
-            raise Exception(f"Yedek modelde de hata oluştu: {e2}")
+            st.info(f"Model deneniyor: {model_url}")
+            return generate_image_with_model(prompt, model_url)
+        except Exception as e:
+            st.warning(f"Model hatası: {model_url}\nHata: {e}\nDiğer modele geçiliyor...")
+    raise Exception("Tüm modellerde hata oluştu. Lütfen API anahtarınızı ve endpointleri kontrol edin.")
 
 if submit:
     prompt = build_prompt(toplam_alan, ortak_yuzde, daire_tipi, cephe_sayisi)
@@ -77,4 +100,4 @@ if submit:
         img_bytes = generate_image(prompt)
         st.image(img_bytes, caption="Yapay Zeka ile Oluşturulan Kat Planı", use_column_width=True)
     except Exception as e:
-        st.error(f"Görsel oluşturulamadı: {e}")        
+        st.error(f"Görsel oluşturulamadı: {e}")
