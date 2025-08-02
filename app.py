@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import base64
 
-# Stability API anahtarını buraya yapıştır (gizli tut)
 STABILITY_API_KEY = "sk-laNUBRTwk4ZkEbTU6lH8T9AGyubr06jOP770EgMOCmxAsF1x"
 
 ORTALAMA_ALAN = {
@@ -36,8 +35,7 @@ def build_prompt(toplam_alan, ortak_yuzde, daire_tipi, cephe_sayisi):
         f"{cephe_sayisi} street-facing side{'s' if cephe_sayisi > 1 else ''}"
     )
 
-def generate_image(prompt):
-    url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-beta-v2-2-2/text-to-image"
+def generate_image_with_model(prompt, model_url):
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
         "Content-Type": "application/json",
@@ -51,12 +49,26 @@ def generate_image(prompt):
         "steps": 30,
         "text_prompts": [{"text": prompt, "weight": 1}],
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(model_url, headers=headers, json=data)
     if response.status_code != 200:
-        raise Exception(f"API hatası: {response.text}")
+        raise Exception(f"API hatası ({model_url}): {response.text}")
     result = response.json()
     img_base64 = result["artifacts"][0]["base64"]
     return base64.b64decode(img_base64)
+
+def generate_image(prompt):
+    # Öncelikli model
+    model_1 = "https://api.stability.ai/v1/generation/stable-diffusion-xl-beta-v2-2-2/text-to-image"
+    # Yedek model
+    model_2 = "https://api.stability.ai/v1/generation/stable-diffusion-512-v2-1/text-to-image"
+    try:
+        return generate_image_with_model(prompt, model_1)
+    except Exception as e1:
+        st.warning(f"Birinci model hatası: {e1}\nYedek modele geçiliyor...")
+        try:
+            return generate_image_with_model(prompt, model_2)
+        except Exception as e2:
+            raise Exception(f"Yedek modelde de hata oluştu: {e2}")
 
 if submit:
     prompt = build_prompt(toplam_alan, ortak_yuzde, daire_tipi, cephe_sayisi)
@@ -65,4 +77,4 @@ if submit:
         img_bytes = generate_image(prompt)
         st.image(img_bytes, caption="Yapay Zeka ile Oluşturulan Kat Planı", use_column_width=True)
     except Exception as e:
-        st.error(f"Görsel oluşturulamadı: {e}")
+        st.error(f"Görsel oluşturulamadı: {e}")        
