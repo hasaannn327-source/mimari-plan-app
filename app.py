@@ -5,7 +5,6 @@ import base64
 # Stability API anahtarını buraya yapıştır (gizli tut)
 STABILITY_API_KEY = "sk-laNUBRTwk4ZkEbTU6lH8T9AGyubr06jOP770EgMOCmxAsF1x"
 
-# Ortalama daire alanları
 ORTALAMA_ALAN = {
     "1+1": 60,
     "2+1": 90,
@@ -21,7 +20,6 @@ Bu uygulama, verdiğiniz bilgilere göre **Stable Diffusion** ile mimarî kat pl
 Planlar 2D CAD tarzında, sade ve temiz çizim olur.
 """)
 
-# Kullanıcıdan veri al
 with st.form("input_form"):
     toplam_alan = st.number_input("Toplam Brüt Alan (m²)", min_value=50.0, value=500.0, step=10.0)
     ortak_yuzde = st.slider("Ortak Alan Oranı (%)", 0, 50, 10)
@@ -39,7 +37,7 @@ def build_prompt(toplam_alan, ortak_yuzde, daire_tipi, cephe_sayisi):
     )
 
 def generate_image(prompt):
-    url = "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/text-to-image"
+    url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-beta-v2-2-2/text-to-image"
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
         "Content-Type": "application/json",
