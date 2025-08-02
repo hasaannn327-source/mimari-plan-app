@@ -4,7 +4,7 @@ import openai
 import streamlit as st
 
 # API anahtarı doğrudan kodda (⚠️ Üretimde önerilmez!)
-openai.api_key = "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"
+openai.api_key = "sk-gxWEicnVOK1Eg9WNbC22AFkOMUUcMe53v1QXJsFvah5IqV2R"
 
 # Ortalama daire alanları (m²)
 ORTALAMA_ALAN = {
