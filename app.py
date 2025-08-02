@@ -12,15 +12,12 @@ ORTALAMA_ALAN = {
 }
 
 st.set_page_config(page_title="Mimari Plan Çizici (Stability Ultra)", layout="centered")
-st.title("🏗️ Mimari Kat Planı Çizici (Stability Ultra API)")
+st.title("🏗️ Mimari Kat Planı Çizici")
 
-st.markdown("""
-Bu araç, verdiğiniz bilgilere göre **yapay zeka ile 2D mimari kat planı görseli** oluşa ultra model endpoint’ini kullanır.
-""")
 
 with st.form("input_form"):
     toplam_alan = st.number_input("Toplam Brüt Alan (m²)", min_value=50.0, value=500.0, step=10.0)
-    ortak_yuzde = st.slider("Ortak Alan Oranı (%)", 0, 50, 10)
+    ortak_yuzde = st.selectbox("Ortak Alan Oranı (%)", 0, 50, 10)
     cephe_sayisi = st.selectbox("Caddeye Bakan Cephe Sayısı", [1, 2, 3, 4], index=0)
     daire_tipi = st.selectbox("Daire Tipi", list(ORTALAMA_ALAN.keys()), index=1)
     submit = st.form_submit_button("Planı Oluştur")
