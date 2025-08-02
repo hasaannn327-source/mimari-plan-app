@@ -1,4 +1,7 @@
-import streamlit as st import requests import base64 import os
+import streamlit as st
+import requests
+import base64
+import os
 
 Stability API key (gizli tut)
 
