@@ -41,7 +41,7 @@ def generate_image_ultra(prompt):
     url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
     headers = {
         "authorization": f"Bearer {STABILITY_API_KEY}",
-        "accept": "image/webp"
+        "accept": "image/*"  # Burada image/* olarak değişti
     }
     files = {"none": ""}
     data = {
